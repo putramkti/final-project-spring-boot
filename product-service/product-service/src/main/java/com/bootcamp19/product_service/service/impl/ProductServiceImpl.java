@@ -1,5 +1,6 @@
 package com.bootcamp19.product_service.service.impl;
 
+import com.bootcamp19.product_service.dto.request.ProductBatchImportDto;
 import com.bootcamp19.product_service.dto.request.ProductRequestDto;
 import com.bootcamp19.product_service.dto.response.ProductResponseDto;
 import com.bootcamp19.product_service.entity.Product;
@@ -95,6 +96,40 @@ public class ProductServiceImpl implements ProductService {
             throw new ProductNotFoundException(id);
         }
         productRepository.deleteById(id);
+    }
+
+    @Override
+    public int importProducts(List<ProductBatchImportDto> batch) {
+        int importedCount = 0;
+        for (ProductBatchImportDto item : batch) {
+            // Rating < 3 tidak diimpor dan dicatat di log
+            if (item.getRating() != null && item.getRating() < 3.0) {
+                log.warn("[Import Rejected] Product '{}' skipped due to low rating: {}", item.getName(), item.getRating());
+                continue;
+            }
+
+            // Pengecekan duplikat berdasarkan nama
+            if (productRepository.existsByNameIgnoreCase(item.getName())) {
+                log.info("[Import Skipped] Product '{}' already exists in catalog", item.getName());
+                continue;
+            }
+
+            Product product = Product.builder()
+                    .name(item.getName())
+                    .price(item.getPrice())
+                    .category(item.getCategory())
+                    .brand(item.getBrand())
+                    .rating(item.getRating())
+                    .createdBy("SCHEDULER_IMPORT")
+                    .createdAt(LocalDateTime.now())
+                    .updatedAt(LocalDateTime.now())
+                    .build();
+
+            productRepository.save(product);
+            importedCount++;
+            log.info("[Import Success] Saved product '{}' with rating {}", item.getName(), item.getRating());
+        }
+        return importedCount;
     }
 
     private List<ProductResponseDto> toResponses(List<Product> data){
