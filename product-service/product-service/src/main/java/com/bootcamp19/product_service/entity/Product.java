@@ -32,7 +32,7 @@ public class Product {
     @Column(nullable = false, length = 100)
     private String brand;
 
-    @Column(precision = 3, scale = 2)
+    @Column
     private Double rating;
 
     @Column(name = "created_by", length = 100)
