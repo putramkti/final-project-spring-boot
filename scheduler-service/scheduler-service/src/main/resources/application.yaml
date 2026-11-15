@@ -1,0 +1,20 @@
+server:
+  port: 8083
+  servlet:
+    context-path: /scheduler
+
+spring:
+  application:
+    name: scheduler-service
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka
+
+dummyjson:
+  url: https://dummyjson.com
+
+scheduler:
+  cron: "0 */2 * * * *"
+  batch-size: 5
