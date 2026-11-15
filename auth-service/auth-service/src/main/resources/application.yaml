@@ -22,4 +22,4 @@ eureka:
 
 jwt:
   secret: ${JWT_SECRET:bd3dae5fb91f88a4f0978222dfd58f59a124257cb081486387cbae9df11fb879}
-  expiration-ms: ${JWT_EXPIRATION_MS:86400000}
+  expiration-ms: ${JWT_EXPIRATION_MS:3600000}
