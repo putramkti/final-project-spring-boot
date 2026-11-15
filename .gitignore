@@ -1,0 +1,8 @@
+.idea/
+*.iml
+target/
+*/target/
+*/*/target/
+${project.build.directory}/
+*/*/${project.build.directory}/
+.DS_Store

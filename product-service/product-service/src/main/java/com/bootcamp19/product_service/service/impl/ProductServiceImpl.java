@@ -11,6 +11,8 @@ import com.bootcamp19.product_service.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -48,6 +50,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Cacheable(value = "products", key="#id")
     public ProductResponseDto getProductById(Long id) {
         log.info("[ProductService] Fetching details for product ID: {}", id);
         Product product = productRepository.findById(id)
@@ -69,6 +72,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @CacheEvict(value = "products", key = "#id")
     public ProductResponseDto updateProduct(Long id, ProductRequestDto request) {
         log.info("[ProductService] Updating product ID: {}", id);
         Product product = productRepository.findById(id)
@@ -90,6 +94,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @CacheEvict(value = "products", key = "#id")
     public void deleteProduct(Long id) {
         log.info("[ProductService] Deleting product ID: {}", id);
         if (!productRepository.existsById(id)) {

@@ -52,6 +52,7 @@ public class ProductImportServiceImpl implements ProductImportService {
         int endIndex = Math.min(startIndex + batchSize, totalProducts);
 
         List<DummyJsonProduct> batchSlice = allProducts.subList(startIndex, endIndex);
+        log.info("[Scheduler] Processing batch slice [{}..{}] (Batch size: {})", startIndex, endIndex, batchSlice.size());
 
         List<ProductImportRequestDto> dtoList = toDtoList(batchSlice);
 
