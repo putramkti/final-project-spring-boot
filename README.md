@@ -39,10 +39,6 @@ Semua service terdaftar di eureka-server :8761
 Jalankan database dan Redis sebelum menyalakan service:
 
 ```bash
-# PostgreSQL
-docker run -d --name postgres-batch19 -p 5432:5432 \
-  -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=root -e POSTGRES_DB=product_db \
-  postgres:16
 
 # Redis
 docker compose -f docker-compose-redis.yaml up -d
