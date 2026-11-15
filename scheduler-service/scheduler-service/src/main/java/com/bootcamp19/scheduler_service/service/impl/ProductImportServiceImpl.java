@@ -29,42 +29,38 @@ public class ProductImportServiceImpl implements ProductImportService {
 
     @Override
     public synchronized void executeImport(String triggerSource) {
-        log.info("[Scheduler] Starting product import sequence. Triggered by: {}", triggerSource);
+        log.info("[Scheduler] Starting import. Trigger: {}, Offset: {}, Limit: {}", triggerSource, currentOffset, batchSize);
 
         DummyJsonProductListResponse response;
-
         try {
-            response = dummyJsonClient.getSmartphones();
+            // Ambil langsung 5 produk dari DummyJSON menggunakan limit & skip
+            response = dummyJsonClient.getSmartphones(batchSize, currentOffset);
         } catch (Exception ex) {
             log.error("[Scheduler] Unable to fetch products from DummyJSON: {}", ex.getMessage());
             return;
         }
 
         if (response == null || response.getProducts() == null || response.getProducts().isEmpty()) {
-            log.warn("[Scheduler] No smartphone records received from DummyJSON");
+            log.warn("[Scheduler] No records or end of category reached. Resetting offset to 0.");
+            currentOffset = 0;
             return;
         }
 
-        List<DummyJsonProduct> allProducts = response.getProducts();
-        int totalProducts = allProducts.size();
-
-        int startIndex = currentOffset % totalProducts;
-        int endIndex = Math.min(startIndex + batchSize, totalProducts);
-
-        List<DummyJsonProduct> batchSlice = allProducts.subList(startIndex, endIndex);
-        log.info("[Scheduler] Processing batch slice [{}..{}] (Batch size: {})", startIndex, endIndex, batchSlice.size());
-
-        List<ProductImportRequestDto> dtoList = toDtoList(batchSlice);
+        List<ProductImportRequestDto> dtoList = toDtoList(response.getProducts());
 
         try {
             productServiceClient.sendBatchForImport(dtoList);
             log.info("[Scheduler] Dispatched {} items to product-service successfully", dtoList.size());
 
-            currentOffset = (endIndex >= totalProducts) ? 0 : endIndex;
+            // Update offset untuk putaran berikutnya
+            currentOffset += dtoList.size();
+            if (response.getTotal() != null && currentOffset >= response.getTotal()) {
+                log.info("[Scheduler] Reached total products ({}), resetting offset for next cycle", response.getTotal());
+                currentOffset = 0;
+            }
         } catch (Exception ex) {
             log.error("[Scheduler] Failed to dispatch batch to product-service: {}", ex.getMessage());
         }
-
     }
 
     private List<ProductImportRequestDto> toDtoList(List<DummyJsonProduct> products) {
