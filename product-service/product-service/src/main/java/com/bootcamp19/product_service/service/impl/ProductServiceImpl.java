@@ -1,5 +1,7 @@
 package com.bootcamp19.product_service.service.impl;
 
+import com.bootcamp19.product_service.dto.feign.DummyJsonProductWriteRequest;
+import com.bootcamp19.product_service.dto.feign.DummyJsonProductWriteResponse;
 import com.bootcamp19.product_service.dto.request.ProductBatchImportDto;
 import com.bootcamp19.product_service.dto.request.ProductRequestDto;
 import com.bootcamp19.product_service.dto.response.ProductResponseDto;
@@ -7,6 +9,7 @@ import com.bootcamp19.product_service.entity.Product;
 import com.bootcamp19.product_service.exception.DuplicateProductException;
 import com.bootcamp19.product_service.exception.ProductNotFoundException;
 import com.bootcamp19.product_service.repository.ProductRepository;
+import com.bootcamp19.product_service.rest.DummyJsonWriteClient;
 import com.bootcamp19.product_service.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +27,7 @@ import java.util.List;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class ProductServiceImpl implements ProductService {
     private final ProductRepository productRepository;
+    private final DummyJsonWriteClient dummyJsonWriteClient;
 
     @Override
     public ProductResponseDto createProduct(ProductRequestDto request, String userId) {
@@ -46,6 +50,9 @@ public class ProductServiceImpl implements ProductService {
 
         Product saved = productRepository.save(product);
         log.info("[ProductService] Product created with generated ID: {}", saved.getId());
+
+        syncAddProductToDummyJson(saved);
+
         return ProductResponseDto.fromEntity(saved);
     }
 
@@ -90,6 +97,7 @@ public class ProductServiceImpl implements ProductService {
         product.setUpdatedAt(LocalDateTime.now());
 
         Product updated = productRepository.save(product);
+        syncUpdateProductToDummyJson(updated);
         return ProductResponseDto.fromEntity(updated);
     }
 
@@ -101,6 +109,7 @@ public class ProductServiceImpl implements ProductService {
             throw new ProductNotFoundException(id);
         }
         productRepository.deleteById(id);
+        syncDeleteProductToDummyJson(id);
     }
 
     @Override
@@ -143,5 +152,49 @@ public class ProductServiceImpl implements ProductService {
             productResponseDtos.add(ProductResponseDto.fromEntity(product));
         }
         return productResponseDtos;
+    }
+
+    private void syncAddProductToDummyJson(Product product) {
+        try {
+            DummyJsonProductWriteRequest payload = DummyJsonProductWriteRequest.builder()
+                    .title(product.getName())
+                    .price(product.getPrice())
+                    .category(product.getCategory())
+                    .brand(product.getBrand())
+                    .build();
+
+            DummyJsonProductWriteResponse response = dummyJsonWriteClient.addProduct(payload);
+            log.info("[DummyJSON Sync - CREATE] Simulated response: ID={}, Title={}, Price={}",
+                    response.getId(), response.getTitle(), response.getPrice());
+        } catch (Exception ex) {
+            log.warn("[DummyJSON Sync - CREATE] Failed to sync add to DummyJSON: {}", ex.getMessage());
+        }
+    }
+
+    private void syncUpdateProductToDummyJson(Product product) {
+        try {
+            DummyJsonProductWriteRequest payload = DummyJsonProductWriteRequest.builder()
+                    .title(product.getName())
+                    .price(product.getPrice())
+                    .category(product.getCategory())
+                    .brand(product.getBrand())
+                    .build();
+
+            DummyJsonProductWriteResponse response = dummyJsonWriteClient.updateProduct(product.getId(), payload);
+            log.info("[DummyJSON Sync - UPDATE] Simulated response: ID={}, Title={}, Price={}",
+                    response.getId(), response.getTitle(), response.getPrice());
+        } catch (Exception ex) {
+            log.warn("[DummyJSON Sync - UPDATE] Failed to sync update to DummyJSON: {}", ex.getMessage());
+        }
+    }
+
+    private void syncDeleteProductToDummyJson(Long id) {
+        try {
+            DummyJsonProductWriteResponse response = dummyJsonWriteClient.deleteProduct(id);
+            log.info("[DummyJSON Sync - DELETE] Simulated response: ID={}, isDeleted={}, deletedOn={}",
+                    response.getId(), response.getIsDeleted(), response.getDeletedOn());
+        } catch (Exception ex) {
+            log.warn("[DummyJSON Sync - DELETE] Failed to sync delete to DummyJSON: {}", ex.getMessage());
+        }
     }
 }
