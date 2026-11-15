@@ -34,7 +34,7 @@ public class LoggingAspect {
         return result;
     }
 
-    @AfterThrowing(pointcut = "execution(* com.example.product.service..*.*(..))", throwing = "exception")
+    @AfterThrowing(pointcut = "execution(* com.bootcamp19.product_service.service..*.*(..))", throwing = "exception")
     public void logServiceException(JoinPoint joinPoint, Exception exception) {
         log.error("[AOP EXCEPTION] Error in {}: {}", joinPoint.getSignature().toShortString(), exception.getMessage());
     }

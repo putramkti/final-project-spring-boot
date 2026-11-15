@@ -1,6 +1,6 @@
 services:
   minio-batch19:
-    image: quay.io/minio/minio:latest
+    image: cgr.dev/chainguard/minio:latest
     container_name: minio-batch19
     ports:
       - "9000:9000" # port API (dipakai aplikasi)
